@@ -18,7 +18,8 @@ const defaultValues = {
 const Map = () => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<mapboxgl.Map | null>(null);
-    const [route, setRoute] = useState<GeoJSON.LineString | null>(null);
+    const [routes, setRoutes] = useState<GeoJSON.LineString[] | null>(null);
+    const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_TOKEN || '';
     const [crashLayerVisible, setCrashLayerVisible] = useState<boolean>(true);
@@ -37,14 +38,16 @@ const Map = () => {
             setLoading(true)
             const { startLocation, endLocation } = location;
 
-            const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${startLocation};${endLocation}?steps=true&geometries=geojson&access_token=${accessToken}`);
+            const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${startLocation};${endLocation}?geometries=geojson&alternatives=true&steps=true&overview=full&&access_token=${accessToken}`);
             const data = await response.json();
 
             if (data.routes && data.routes.length > 0) {
-                const routeData = data.routes[0].geometry;
-                setRoute(routeData);
+                const routesData = data.routes.map((route: any) => route.geometry);
+
+                setSelectedRouteIndex(0);
+
+                setRoutes(routesData);
             } else {
-                setRoute(null);
                 alert('No route found.');
             }
         } catch (error) {
@@ -191,45 +194,61 @@ const Map = () => {
         };
     }, []);
 
+
     useEffect(() => {
-        if (map && route) {
-            if (map.getSource('route')) {
-                const geojson: GeoJSON.Feature<GeoJSON.Geometry> = {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: route.coordinates
-                    }
-                };
+        if (map && routes && selectedRouteIndex !== null) {
+            // Add click event listener at the map level
+            map.on('click', (e) => {
+                const clickedFeature = map.queryRenderedFeatures(e.point, { layers: ['route-layer'] });
 
-                (map.getSource('route') as GeoJSONSource).setData(geojson);
-            } else {
-                map.addLayer({
-                    id: 'route',
-                    type: 'line',
-                    source: {
-                        type: 'geojson',
-                        data: {
-                            type: 'Feature',
-                            properties: {},
-                            geometry: route
+                if (clickedFeature.length > 0) {
+                    const clickedRouteIndex = Number(clickedFeature[0].properties?.index);
+                     // Select the clicked route
+                     selectRoute(clickedRouteIndex);
+                }
+            });
+
+            routes.forEach((routeData, index) => {
+                const sourceId = `route-${index}`;
+                const lineColor = index === selectedRouteIndex ? '#A0A0A0' : '#72E128';
+
+                if (map.getSource(sourceId)) {
+                    const geojson: GeoJSON.Feature<GeoJSON.Geometry> = {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: routeData.coordinates
                         }
-                    },
-                    layout: {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    paint: {
-                        'line-color': '#72E128',
-                        'line-width': 8,
-                        'line-opacity': 0.75
-                    }
-                });
-            }
+                    };
 
+                    (map.getSource(sourceId) as GeoJSONSource).setData(geojson);
+                } else {
+                    map.addLayer({
+                        id: sourceId,
+                        type: 'line',
+                        source: {
+                            type: 'geojson',
+                            data: {
+                                type: 'Feature',
+                                properties: {},
+                                geometry: routeData
+                            }
+                        },
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': lineColor,
+                            'line-width': 8,
+                            'line-opacity': 0.75
+                        }
+                    });
+                }
+            });
         }
-    }, [map, route]);
+    }, [map, routes, selectedRouteIndex]);
 
     useEffect(() => {
         fetchLayer();
@@ -253,6 +272,23 @@ const Map = () => {
         setSpeedLayerVisible(!speedLayerVisible);
         if (map && map.getLayer('speed-data-layer')) {
             map.setLayoutProperty('speed-data-layer', 'visibility', speedLayerVisible ? 'none' : 'visible');
+        }
+    };
+
+    const selectRoute = (index: number) => {
+        if (!map) return;
+        if (index !== selectedRouteIndex) {
+            // Change the color of the previously selected route to gray
+            if (selectedRouteIndex !== null) {
+                const previousSourceId = `route-${selectedRouteIndex}`;
+                map.setPaintProperty(previousSourceId, 'line-color', '#A0A0A0');
+            }
+
+            // Change the color of the newly selected route to green
+            const newSourceId = `route-${index}`;
+            map.setPaintProperty(newSourceId, 'line-color', '#72E128');
+
+            setSelectedRouteIndex(index);
         }
     };
 
