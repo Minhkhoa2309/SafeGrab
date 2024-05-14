@@ -88,6 +88,7 @@ const CrashMap = () => {
                     map.removeLayer('cluster-count');
                     map.removeSource('clusters');
                 }
+                
                 // Add cluster layers
                 map.addSource('clusters', {
                     type: 'geojson',

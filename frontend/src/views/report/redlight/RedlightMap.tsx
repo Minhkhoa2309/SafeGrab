@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import mapboxgl, { GeoJSONSource, MapboxGeoJSONFeature } from 'mapbox-gl';
+import mapboxgl from 'mapbox-gl';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 
 const RedlightMap = () => {
@@ -88,6 +88,7 @@ const RedlightMap = () => {
                     map.removeLayer('cluster-count');
                     map.removeSource('clusters');
                 }
+                
                 // Add cluster layers
                 map.addSource('clusters', {
                     type: 'geojson',

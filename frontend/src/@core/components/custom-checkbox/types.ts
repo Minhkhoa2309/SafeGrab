@@ -1,9 +1,6 @@
 // ** React Imports
 import { ReactNode } from 'react'
 
-// ** MUI Imports
-import { GridProps } from '@mui/material/Grid'
-
 // ** Type Imports
 import { ThemeColor } from 'src/@core/layouts/types'
 

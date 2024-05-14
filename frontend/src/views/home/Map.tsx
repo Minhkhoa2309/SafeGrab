@@ -70,6 +70,7 @@ const Map = () => {
                     map.removeLayer('crash-data-layer');
                     map.removeSource('crash-data');
                 }
+
                 // Add the GeoJSON as a source to the map
                 map.addSource('crash-data', {
                     type: 'geojson',
@@ -102,6 +103,7 @@ const Map = () => {
                     map.removeLayer('redlight-data-layer');
                     map.removeSource('redlight-data');
                 }
+
                 // Add the GeoJSON as a source to the map
                 map.addSource('redlight-data', {
                     type: 'geojson',
@@ -203,8 +205,7 @@ const Map = () => {
 
                 if (clickedFeature.length > 0) {
                     const clickedRouteIndex = Number(clickedFeature[0].properties?.index);
-                     // Select the clicked route
-                     selectRoute(clickedRouteIndex);
+                    selectRoute(clickedRouteIndex);
                 }
             });
 
