@@ -1,11 +1,12 @@
-// ** MUI Imports
-import Card from '@mui/material/Card'
-import Typography from '@mui/material/Typography'
-import CardHeader from '@mui/material/CardHeader'
-import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
+// ** React imports
+import { useCallback, useEffect, useState } from 'react'
 
-// ** Types Imports
+// ** MUI Imports
+import Typography from '@mui/material/Typography'
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
 import { Box } from '@mui/material'
+
+// ** Utils Imports
 import { formatDate } from 'src/layouts/utils/format'
 
 const columns: GridColDef[] = [
@@ -50,31 +51,56 @@ const columns: GridColDef[] = [
     }
 ]
 
-const SpeedTable = ({ data, paginationModel, total, setPaginationModel }:
-    {
-        data: any[],
-        total: number,
-        paginationModel: { page: number, pageSize: number },
-        setPaginationModel: ({ page, pageSize }: { page: number, pageSize: number }) => void;
-    }) => {
+const SpeedTable = () => {
+    const [rows, setRows] = useState<any[]>([])
+    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 })
+    const [total, setTotal] = useState<number>(0)
+
+    const fetchTableData = useCallback(async () => {
+        await fetch(
+            `https://data.cityofchicago.org/resource/hhkd-xvj4.json?$limit=${paginationModel.pageSize}&$offset=${paginationModel.page}`
+        )
+            .then(response => response.json())
+            .then(data => {
+                setRows(data);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    }, [paginationModel]);
+
+    const fetchTotalCount = useCallback(async () => {
+        await fetch(
+            `https://data.cityofchicago.org/resource/hhkd-xvj4.json?$select=count(*) as total`
+        ).then(response => response.json())
+            .then(data => {
+                setTotal(Number(data[0].total))
+            })
+            .catch(error => {
+                console.error('Error fetching Total:', error);
+            });
+    }, [])
+
+    useEffect(() => {
+        fetchTotalCount();
+        fetchTableData();
+    }, [fetchTotalCount, fetchTableData, paginationModel])
+
 
     return (
-        <Card>
-            <CardHeader title='Speed Violation Report' />
-            <Box sx={{ height: 600 }}>
-                <DataGrid
-                    pagination
-                    rows={data}
-                    getRowId={(row) => row.address}
-                    rowCount={total}
-                    columns={columns}
-                    paginationMode='server'
-                    pageSizeOptions={[25, 50, 100]}
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={setPaginationModel}
-                />
-            </Box>
-        </Card>
+        <Box sx={{ height: 600 }}>
+            <DataGrid
+                pagination
+                rows={rows}
+                getRowId={(row) => row.address}
+                rowCount={total}
+                columns={columns}
+                paginationMode='server'
+                pageSizeOptions={[25, 50, 100]}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+            />
+        </Box>
     )
 }
 

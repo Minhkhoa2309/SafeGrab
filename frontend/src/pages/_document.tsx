@@ -22,6 +22,8 @@ class CustomDocument extends Document {
             href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
           />
           <link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
+          <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+          <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css"></link>
         </Head>
         <body>
           <Main />
@@ -40,12 +42,12 @@ CustomDocument.getInitialProps = async ctx => {
   ctx.renderPage = () =>
     originalRenderPage({
       enhanceApp: App => props =>
-        (
-          <App
-            {...props} // @ts-ignore
-            emotionCache={cache}
-          />
-        )
+      (
+        <App
+          {...props} // @ts-ignore
+          emotionCache={cache}
+        />
+      )
     })
 
   const initialProps = await Document.getInitialProps(ctx)
