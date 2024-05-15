@@ -4,9 +4,9 @@ import { VerticalNavItemsType, HorizontalNavItemsType } from 'src/@core/layouts/
 export const VertivalNavigation = (): VerticalNavItemsType => {
   return [
     {
-      title: 'Home',
+      title: 'Navigation',
       action: 'read',
-      icon: 'mdi:home-outline',
+      icon: 'tabler:navigation-pin',
       path: '/'
     },
     {
@@ -33,9 +33,9 @@ export const VertivalNavigation = (): VerticalNavItemsType => {
 export const HorizontalNavigation = (): HorizontalNavItemsType => {
   return [
     {
-      title: 'Home',
+      title: 'Navigation',
       action: 'read',
-      icon: 'mdi:home-outline',
+      icon: 'tabler:navigation-pin',
       path: '/'
     },
     {
