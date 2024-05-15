@@ -1,48 +1,52 @@
-# BACKEND VERSION 1.0
+# BACKEND VERSION 1.1
 ## Functions
-- Add API paths to pull summarized data for:
-  - Congestions
+- Add API paths to pull summarized data + map modelling for:
   - Speed violations
   - Red lights violations
+  - Crashes
 
 ## Usage
 Download all npm package dependencies
 ```
 npm i
 ```
-Download all CSV files from the links below and put them all into "data" folder
-- [Red Light Camera Violations](https://data.cityofchicago.org/Transportation/Red-Light-Camera-Violations/spqx-js37/about_data)
-- [Speed Camera Violations](https://data.cityofchicago.org/Transportation/Speed-Camera-Violations/hhkd-xvj4/about_data)
-- [Current Traffic Congestion Estimate](https://data.cityofchicago.org/Transportation/Chicago-Traffic-Tracker-Congestion-Estimates-by-Se/n4j6-wkkf/about_data)
-- [Chicago Street Center Lines](https://data.cityofchicago.org/Transportation/Street-Center-Lines/6imu-meau)
-
-Change file name in convert.js (for array "inputs" and "outputs")
-After that, run
+Create a .env file and add the following information in this format
 ```
-npm run convert
+POSTGRES_HOST=<HOST-IP>
+POSTGRES_PORT=<PORT-NUMBER>
+POSTGRES_USERNAME=<USERNAME>
+POSTGRES_PASSWORD=<PASSWORD>
+POSTGRES_DATABASE=<DATABASE-NAME>
 ```
-This should give you all the json files needed to run this
-
-All that left is
+Run the code
 ```
-npm run dev
+npm start
 ```
 ## API Routes
 The base API route is /api/v1
-- /redlights/cluster: get GeoJSON of number of redlight violations on every location recorded
-- /speeds/cluster: get GeoJSON of number of speed violations on every location recorded
-- /crashes/cluster: get GeoJSON of number of crashes on every road (WORK IN PROGRESS)
-- /congestions/cluster: get GeoJSON of congestions on every road (MAY REMOVED SOON)
+- /redlights/map: GET GeoJSON of number of redlight violations based on grid size and bounding box. Request query includes:
+  - gridSize: divide the bounding box into determined grid size
+  - boundingBox: an array with 4 arrays holding 4 points for the bounding box
+  - startDate: filter date of violation
+  - endDate: filter date of violation
+- /speeds/map: same as above
+- /crashes/map: same as above
+- /redlights/table: GET JSON of information in redlight violations. Request query includes
+  - intersection: filter by intersection
+  - startDate: filter date of violation
+  - endDate: filter date of violation
+  - pageSize: size of each page for pagination
+  - pageIndex: current page
+- /speeds/table: GET JSON of information in speed violations. Request query includes
+  - Same as /redlights/table but without the intersection field
+- /crashes/table: GET JSON of information in crashes. Request query includes
+  - Same as /redlights/table but change the intersection field to 'streetName' field to filter street name
 
 ## Future Plans
-- Change the way to get /crashes/cluster. Here are my proposals
-  - Pre-computed tables using the current algorithm
-  - Sort by month + year --> get all the points without combining data
-  - Use radius / hexagon layer (not in favor)
+- Code refactoring
 - Error handling
 - Authentication
 - Show danger zones / warning points when user query desired traffic routes using two coordinates --> get desired path to user
-- Crash prediction???
 
 ## Credits
 - All datasets taken from [City of Chicago's open data portal](https://data.cityofchicago.org/).

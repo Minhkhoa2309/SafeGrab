@@ -1,168 +1,96 @@
-const speedJson = require("../speed.json");
-const routeJson = require("../transportation.json");
-const axios = require("axios");
+const { client } = require("../database/database");
+const { point, featureCollection } = require("@turf/helpers");
 
-async function fetchData(url) {
+async function getCrashesMap(req, res) {
     try {
-        const response = await axios.get(url);
-        return response.data;
-    } catch (error) {
-        console.log("Error:", error);
-    }
-}
-
-function sortCrashesToRoute(routes, coordinate) {
-    let conditionFound = false;
-    for (let i = 0; i < routes.length; i++) {
-        const route = routes[i];
-        // console.log(route)
-        const points = route.points
-        // console.log(points.length)
-        for (let j = 0; j < points.length - 1; j++) {
-            const pointA = points[j]
-            const pointB = points[j + 1]
-            const minX = Math.min(pointA[0], pointB[0]);
-            const maxX = Math.max(pointA[0], pointB[0]);
-            const minY = Math.min(pointA[1], pointB[1]);
-            const maxY = Math.max(pointA[1], pointB[1]);
-
-            if (
-                coordinate[0] >= minX &&
-                coordinate[0] <= maxX &&
-                coordinate[1] >= minY &&
-                coordinate[1] <= maxY
-            ) {
-                route.count += 1;
-                conditionFound = true;
-                break;
-            }
-        }
-        if (conditionFound) {
-            break;
-        }
-    }
-    // if (!conditionFound) {
-    //     notMentionedCrashes.count += 1
-    // }
-}
-
-function getCoordinates(inputString) {
-    const coordinateRegex = /-?\d+\.\d+/g;
-    const coordinates = inputString.match(coordinateRegex);
-    const coordinatePairs = [];
-    for (let i = 0; i < coordinates.length; i += 2) {
-        coordinatePairs.push([Number(coordinates[i]), Number(coordinates[i + 1])]);
-    }
-    return coordinatePairs
-}
-
-async function getCrashesCluster(req, res) {
-    let routes = routeJson.map((route) => {
-        let points = null;
-        let position = null;
-        if (route.the_geom == "MULTILINESTRING EMPTY") {
-            points = []
-            position = []
-        }
-        else {
-            points = getCoordinates(route.the_geom);
-            position = points[1];
-        }
-        return {
-            name: route.STREET_NAM,
-            type: route.STREET_TYP,
-            points: points,
-            position: position,
-            count: 0,
-        };
-    });
-    // sortCrashesToRoute(routes, [12.1234325, 12.564353])
-
-    let limit = 300000;
-    let offset = 0;
-    // let notMentionedCrashes = { count: 0 };
-    // let totalLength = 0;
-    while (true) {
-        const url = "https://data.cityofchicago.org/resource/85ca-t3if.json?$limit=" + limit + "&$offset=" + offset;
-        const crashesJson = await fetchData(url);
-        if (crashesJson.length == 0) {
-            break;
-        }
-        // for (let i = 0; i < crashesJson.length; i++) {
-        //     const crash = crashesJson[i]
-        //     if (crash.longitude == "" || crash.latitude == "") {
-        //         continue;
-        //     }
-        //     const coordinate = [Number(crash.longitude), Number(crash.latitude)];
-        //     sortCrashes(routes, coordinate, notMentionedCrashes);
-        // }
-        crashesJson
-            // .filter((crash) => crash.longitude != "" && crash.latitude != "")
-            .forEach((crash) => {
-                const coordinate = [Number(crash.longitude), Number(crash.latitude)];
-                sortCrashesToRoute(routes, coordinate);
+        const { gridSize, boundingBox, startDate, endDate } = req.query;
+        let bb = JSON.parse(boundingBox);
+        const query = `SELECT 
+        ST_AsText(ST_SnapToGrid(ST_GeomFromText('POINT(' || longitude || ' ' || latitude || ')'), ${gridSize})) AS snapped_point,
+        count(*) AS count
+    FROM 
+        crashes
+    WHERE 
+        ST_Intersects(
+            ST_GeomFromText('POINT(' || longitude || ' ' || latitude || ')'), 
+            ST_GeomFromText('POLYGON((${bb[0][0]} ${bb[0][1]}, ${bb[1][0]} ${bb[1][1]}, ${bb[2][0]} ${bb[2][1]}, ${bb[3][0]} ${bb[3][1]}, ${bb[0][0]} ${bb[0][1]}))')
+        )
+        AND crash_date >= '${startDate}' 
+        AND crash_date < '${endDate}'
+    GROUP BY 
+        ST_SnapToGrid(ST_GeomFromText('POINT(' || longitude || ' ' || latitude || ')'), ${gridSize});`;
+        const result = await client.query(query);
+        const features = result.rows.map((row) => {
+            const pointString = row.snapped_point
+                .replace("POINT(", "")
+                .replace(")", "");
+            const coordinates = pointString.split(" ");
+            return point(coordinates, {
+                count: row.count,
             });
-        offset += limit;
-        // totalLength += crashesJson.length
+        });
+        const geoJson = featureCollection(features);
+        res.status(200).json(geoJson);
+    } catch (error) {
+        console.error("Error executing query:", error);
+        res.status(500).json({ msg: "Internal Server Error" });
     }
-    // console.log(notMentionedCrashes.count)
-    // console.log(totalLength)
-    res.status(200).json({ routes });
-    // res.status(200).send('OK')
+}
+
+async function getTotalCrashes(streetName, startDate, endDate) {
+    try {
+        let query = `SELECT COUNT(*) FROM crashes WHERE crash_date >= '${startDate}' AND crash_date < '${endDate}'`;
+        if (streetName) {
+            query += ` AND street_name = '${streetName}'`;
+        }
+        query += `;`;
+        const result = await client.query(query);
+        return Number(result.rows[0].count);
+    } catch (error) {
+        console.error("Error executing query:", error);
+        res.status(500).json({ msg: "Internal Server Error" });
+    }
+}
+
+async function getCrashesTable(req, res) {
+    try {
+        const { streetName, startDate, endDate, pageSize, pageIndex } = req.query;
+        const limit = pageSize;
+        const offset = (pageIndex - 1) * pageSize;
+        let query = `SELECT street_name, crash_date, prim_contributory_cause, weather_cond, light_cond FROM crashes WHERE crash_date >= '${startDate}' AND crash_date < '${endDate}'`;
+        if (streetName) {
+            query += ` AND street_name = '${streetName}'`;
+        }
+        query += ` LIMIT ${limit} OFFSET ${offset};`;
+        const result = await client.query(query);
+
+        const crashes = result.rows.map((row) => {
+            return {
+                streetName: row.street_name,
+                crashDate: row.crash_date,
+                primaryCause: row.prim_contributory_cause,
+                weatherCond: row.weather_cond,
+                lightCond: row.light_cond,
+            };
+        });
+
+        const totalCrashes = await getTotalCrashes(
+            streetName,
+            startDate,
+            endDate
+        );
+        const jsonResponse = {
+            crashes,
+            total: totalCrashes,
+        };
+        res.status(200).json(jsonResponse);
+    } catch (error) {
+        console.error("Error executing query:", error);
+        res.status(500).json({ msg: "Internal Server Error" });
+    }
 }
 
 module.exports = {
-    getCrashesCluster,
+    getCrashesTable,
+    getCrashesMap,
 };
-
-// const points = [
-//     [-87.624241, 41.896835],
-//     [-87.617048, 41.896936],
-// ];
-// const points = congestionJson
-//     .filter(
-//         (segment) =>
-//             segment.START_LONGITUDE !== "" &&
-//             segment.START_LATITUDE !== "" &&
-//             segment.END_LONGITUDE !== "" &&
-//             segment.END_LATITUDE
-//     )
-//     .flatMap((segment) => [
-//         [Number(segment.START_LONGITUDE), Number(segment.START_LATITUDE)],
-//         [Number(segment.END_LONGITUDE), Number(segment.END_LATITUDE)],
-//     ]);
-
-// function isInPath(points, coordinate) {
-// for (i = 0; i < points.length; i++) {
-//     const minX = Math.min(points[i][0], points[i + 1][0]);
-//     const maxX = Math.max(points[i][0], points[i + 1][0]);
-//     const minY = Math.min(points[i][1], points[i + 1][1]);
-//     const maxY = Math.max(points[i][1], points[i + 1][1]);
-//     if (
-//         coordinate[0] >= minX &&
-//         coordinate[0] <= maxX &&
-//         coordinate[1] >= minY &&
-//         coordinate[1] <= maxY
-//     ) {
-//         return true;
-//     }
-//     i++;
-// }
-// return false;
-// }
-
-// const coordinates = speedJson
-//     .filter(
-//         (violation) =>
-//             violation.LONGITUDE !== "" && violation.LATITUDE !== ""
-//     )
-//     .map((violation) => {
-//         return [Number(violation.LONGITUDE), Number(violation.LATITUDE)];
-//     });
-
-// let count = 0;
-// coordinates.forEach((coordinate) => {
-//     if (isInPath(points, coordinate)) {
-//         count += 1;
-//     }
-// });

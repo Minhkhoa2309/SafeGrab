@@ -1,4 +1,4 @@
-const congestions = require('../congestion.json')
+const congestions = require('../data/congestion.json')
 const { point, featureCollection } = require("@turf/helpers");
 
 function getCongestionsCluster(req, res) {
