@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 
-const CrashMap = () => {
+const CrashMap = ({ filter }: { filter: string }) => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<mapboxgl.Map | null>(null);
     const accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_TOKEN || '';
     const [mapZoom, setMapZoom] = useState(9);
     const [mapBounds, setMapBounds] = useState<number[][]>([]);
-    const zoomLevels = [4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-    const cellSizes = [0.5, 0.25, 0.125, 0.06, 0.03, 0.015, 0.008, 0.004, 0.002, 0.0001, 0.0005, 0.00025, 0.000125, 0.00006, 0.00003, 0.000015];
+    const zoomLevels = [4, 6, 7, 8, 10, 11, 12, 13, 14, 15];
+    const cellSizes = [0.5, 0.25, 0.125, 0.06, 0.03, 0.015, 0.008, 0.004, 0.002, 0.000015];
 
     useEffect(() => {
         mapboxgl.accessToken = accessToken;
@@ -77,7 +77,7 @@ const CrashMap = () => {
         const cellSize = getCellSize(mapZoom);
 
         await fetch(
-            `https://data.cityofchicago.org/resource/85ca-t3if.geojson?$query=select snap_to_grid(location,${cellSize}),min(:id) as __row_id__,count(*) as __count__ where intersects(location, 'POLYGON((${mapBounds[0][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[0][1]}))') group by snap_to_grid(location,${cellSize}) limit 50000 &$$query_timeout_seconds=60&$$read_from_nbe=true&$$version=2.1&$$app_token=U29jcmF0YS0td2VraWNrYXNz0`
+            `https://data.cityofchicago.org/resource/85ca-t3if.geojson?$query=select snap_to_grid(location,${cellSize}),min(:id) as __row_id__,count(*) as __count__ where intersects(location, 'POLYGON((${mapBounds[0][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[0][1]}))') AND ${encodeURIComponent(filter)} group by snap_to_grid(location,${cellSize}) limit 50000 &$$query_timeout_seconds=60&$$read_from_nbe=true&$$version=2.1&$$app_token=U29jcmF0YS0td2VraWNrYXNz0`
         ).then(response => response.json())
             .then(data => {
 
@@ -88,7 +88,7 @@ const CrashMap = () => {
                     map.removeLayer('cluster-count');
                     map.removeSource('clusters');
                 }
-                
+
                 // Add cluster layers
                 map.addSource('clusters', {
                     type: 'geojson',
@@ -149,11 +149,11 @@ const CrashMap = () => {
             .catch(error => {
                 console.error('Error fetching Total:', error);
             });
-    }, [mapZoom, mapBounds])
+    }, [mapZoom, mapBounds, filter])
 
     useEffect(() => {
         fetchData()
-    }, [fetchData])
+    }, [fetchData, filter])
 
     const getCellSize = (zoom: number): number => {
         for (let i = 0; i < zoomLevels.length; i++) {

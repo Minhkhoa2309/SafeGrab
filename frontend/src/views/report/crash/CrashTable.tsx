@@ -73,14 +73,16 @@ const columns: GridColDef[] = [
     }
 ]
 
-const CrashTable = () => {
-    const [rows, setRows] = useState<any[]>([])
-    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 })
-    const [total, setTotal] = useState<number>(0)
+const CrashTable = ({ filter }: { filter: string }) => {
+    const [rows, setRows] = useState<any[]>([]);
+    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
+    const [total, setTotal] = useState<number>(0);
+    const [loading, setLoading] = useState<boolean>(false);
 
     const fetchTableData = useCallback(async () => {
+        setLoading(true);
         await fetch(
-            `https://data.cityofchicago.org/resource/85ca-t3if.json?$limit=${paginationModel.pageSize}&$offset=${paginationModel.page}`
+            `https://data.cityofchicago.org/resource/85ca-t3if.json?$limit=${paginationModel.pageSize}&$offset=${paginationModel.page * paginationModel.pageSize}&$where=${encodeURIComponent(filter)}`
         )
             .then(response => response.json())
             .then(data => {
@@ -89,12 +91,13 @@ const CrashTable = () => {
             .catch(error => {
                 console.error('Error fetching data:', error);
             });
-    }, [paginationModel]);
+        setLoading(false);
+    }, [paginationModel, filter]);
 
     const fetchTotalCount = useCallback(async () => {
 
         await fetch(
-            `https://data.cityofchicago.org/resource/85ca-t3if.json?$select=count(*) as total`
+            `https://data.cityofchicago.org/resource/85ca-t3if.json?$select=count(*) as total&$where=${encodeURIComponent(filter)}`
         ).then(response => response.json())
             .then(data => {
                 setTotal(Number(data[0].total))
@@ -102,13 +105,13 @@ const CrashTable = () => {
             .catch(error => {
                 console.error('Error fetching Total:', error);
             });
-    }, [])
+    }, [filter])
 
 
     useEffect(() => {
         fetchTotalCount();
         fetchTableData();
-    }, [fetchTotalCount, fetchTableData, paginationModel])
+    }, [fetchTotalCount, fetchTableData, paginationModel, filter])
 
     return (
         <Box sx={{ height: 600 }}>
@@ -122,6 +125,7 @@ const CrashTable = () => {
                 pageSizeOptions={[25, 50, 100]}
                 paginationModel={paginationModel}
                 onPaginationModelChange={setPaginationModel}
+                loading={loading}
             />
         </Box>
     )

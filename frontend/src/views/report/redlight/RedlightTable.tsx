@@ -66,14 +66,14 @@ const columns: GridColDef[] = [
     }
 ]
 
-const RedlightTable = () => {
+const RedlightTable = ({ filter }: { filter: string }) => {
     const [rows, setRows] = useState<any[]>([])
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 })
     const [total, setTotal] = useState<number>(0)
 
     const fetchTableData = useCallback(async () => {
         await fetch(
-            `https://data.cityofchicago.org/resource/spqx-js37.json?$limit=${paginationModel.pageSize}&$offset=${paginationModel.page}`
+            `https://data.cityofchicago.org/resource/spqx-js37.json?$limit=${paginationModel.pageSize}&$offset=${paginationModel.page}&$where=${encodeURIComponent(filter)}`
         )
             .then(response => response.json())
             .then(data => {
@@ -82,11 +82,11 @@ const RedlightTable = () => {
             .catch(error => {
                 console.error('Error fetching data:', error);
             });
-    }, [paginationModel]);
+    }, [paginationModel, filter]);
 
     const fetchTotalCount = useCallback(async () => {
         await fetch(
-            `https://data.cityofchicago.org/resource/spqx-js37.json?$select=count(*) as total`
+            `https://data.cityofchicago.org/resource/spqx-js37.json?$select=count(*) as total&$where=${encodeURIComponent(filter)}`
         ).then(response => response.json())
             .then(data => {
                 setTotal(Number(data[0].total))
@@ -94,12 +94,12 @@ const RedlightTable = () => {
             .catch(error => {
                 console.error('Error fetching Total:', error);
             });
-    }, [])
+    }, [filter])
 
     useEffect(() => {
         fetchTotalCount();
         fetchTableData();
-    }, [fetchTotalCount, fetchTableData, paginationModel])
+    }, [fetchTotalCount, fetchTableData, paginationModel, filter])
 
 
     return (
@@ -107,7 +107,7 @@ const RedlightTable = () => {
             <DataGrid
                 pagination
                 rows={rows}
-                getRowId={(row) => row.address}
+                getRowId={(row) => `${row.address}_${row.violation_date}_${row.violations}`}
                 rowCount={total}
                 columns={columns}
                 paginationMode='server'
