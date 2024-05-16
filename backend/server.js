@@ -17,12 +17,12 @@ routers.forEach((routerName) => {
     app.use("/api/v1", router);
 });
 
-const PORT = 5000 || process.env.PORT;
+const port = process.env.PORT || 5000;
 const startServer = () => {
     try {
         connectDatabase();
-        app.listen(PORT, () => {
-            console.log("Server is listening on port " + PORT);
+        app.listen(port, () => {
+            console.log("Server is listening on port " + port);
         });
     } catch (error) {
         console.log(error);
