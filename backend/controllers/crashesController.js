@@ -57,7 +57,7 @@ async function getCrashesTable(req, res) {
         const { streetName, startDate, endDate, pageSize, pageIndex } = req.query;
         const limit = pageSize;
         const offset = (pageIndex - 1) * pageSize;
-        let query = `SELECT street_name, crash_date, prim_contributory_cause, weather_cond, light_cond FROM crashes WHERE crash_date >= '${startDate}' AND crash_date < '${endDate}'`;
+        let query = `SELECT street_name, crash_date, prim_contributory_cause, weather_condition, lighting_condition FROM crashes WHERE crash_date >= '${startDate}' AND crash_date < '${endDate}'`;
         if (streetName) {
             query += ` AND street_name = '${streetName}'`;
         }
@@ -69,8 +69,8 @@ async function getCrashesTable(req, res) {
                 streetName: row.street_name,
                 crashDate: row.crash_date,
                 primaryCause: row.prim_contributory_cause,
-                weatherCond: row.weather_cond,
-                lightCond: row.light_cond,
+                weatherCondition: row.weather_condition,
+                lightingCondition: row.lighting_condition,
             };
         });
 

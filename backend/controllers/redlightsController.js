@@ -57,7 +57,7 @@ async function getRedlightViolationsTable(req, res) {
         const { intersection, startDate, endDate, pageSize, pageIndex } = req.query;
         const limit = pageSize;
         const offset = (pageIndex - 1) * pageSize;
-        let query = `SELECT address, intersection, violation_date, violation_count FROM redlight_cam WHERE violation_date >= '${startDate}' AND violation_date < '${endDate}'`;
+        let query = `SELECT address, intersection, violation_date, violations FROM redlight_cam WHERE violation_date >= '${startDate}' AND violation_date < '${endDate}'`;
         if (intersection) {
             query += ` AND intersection = '${intersection}'`;
         }
@@ -69,7 +69,7 @@ async function getRedlightViolationsTable(req, res) {
                 address: row.address,
                 intersection: row.intersection,
                 violationDate: row.violation_date,
-                violationCount: row.violation_count,
+                violationCount: row.violations,
             };
         });
 
