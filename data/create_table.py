@@ -1,0 +1,67 @@
+import os
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, TIMESTAMP
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get database connection information from environment variables
+PGHOST = os.getenv("PGHOST")
+PGDATABASE = os.getenv("PGDATABASE")
+PGUSER = os.getenv("PGUSER")
+PGPASSWORD = os.getenv("PGPASSWORD")
+
+# Create SQLAlchemy engine
+engine = create_engine(f'postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}/{PGDATABASE}')
+
+# Create metadata object
+metadata = MetaData()
+
+# Define tables
+redlight_cam_table = Table(
+    'redlight_cam', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('intersection', String),
+    Column('camera_id', String),
+    Column('address', String),
+    Column('violation_date', TIMESTAMP),
+    Column('violations', Integer),
+    Column('latitude', Float),
+    Column('longitude', Float)
+)
+
+speed_cam_table = Table(
+    'speed_cam', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('address', String),
+    Column('camera_id', String),
+    Column('violation_date', TIMESTAMP),
+    Column('violations', Integer),
+    Column('latitude', Float),
+    Column('longitude', Float)
+)
+
+crashes_table = Table(
+    'crashes', metadata,
+    Column('crash_record_id', String, primary_key=True),
+    Column('crash_date', TIMESTAMP),
+    Column('device_condition', String),
+    Column('weather_condition', String),
+    Column('lighting_condition', String),
+    Column('roadway_surface_cond', String),
+    Column('damage', String),
+    Column('first_crash_type', String),
+    Column('prim_contributory_cause', String),
+    Column('sec_contributory_cause', String),
+    Column('street_no', Integer),
+    Column('street_direction', String),
+    Column('street_name', String),
+    Column('injuries_total', Integer),
+    Column('latitude', Float),
+    Column('longitude', Float)
+)
+
+# Create tables
+metadata.create_all(engine)
+
+print("Tables created successfully!")
