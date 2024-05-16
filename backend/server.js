@@ -8,8 +8,8 @@ const routers = [
     "speedsRouter",
     "redlightsRouter",
     "crashesRouter",
-    "congestionsRouter",
-    "testRouter",
+    // "congestionsRouter",
+    // "testRouter",
 ];
 
 routers.forEach((routerName) => {
