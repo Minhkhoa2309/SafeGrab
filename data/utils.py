@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-CURRENT_DATE_FILE = "current_date.json"
+CURRENT_DATE_FILE = "data/current_date.json"
 
 def load_current_date(kafka_topic):
     """Loads the current date for the specified Kafka topic from the file.
