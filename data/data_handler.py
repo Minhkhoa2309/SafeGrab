@@ -1,4 +1,4 @@
-import time, datetime
+import datetime
 import json
 from kafka import KafkaProducer
 from kafka_crashes_record import KafkaCrashesRecord

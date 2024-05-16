@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime
 
 def run_crawler():
-    subprocess.run(["python3", "data/crawler.py"])
+    subprocess.run(["python3", "crawler.py"])
 
 def get_schedule_time(args):
     hour = "10"
