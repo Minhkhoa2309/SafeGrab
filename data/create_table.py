@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, TIMESTAMP
+from sqlalchemy import UniqueConstraint
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,7 +28,8 @@ redlight_cam_table = Table(
     Column('violation_date', TIMESTAMP),
     Column('violations', Integer),
     Column('latitude', Float),
-    Column('longitude', Float)
+    Column('longitude', Float),
+    UniqueConstraint('camera_id', 'violation_date', name='unique_camera_violation')
 )
 
 speed_cam_table = Table(
@@ -38,7 +40,8 @@ speed_cam_table = Table(
     Column('violation_date', TIMESTAMP),
     Column('violations', Integer),
     Column('latitude', Float),
-    Column('longitude', Float)
+    Column('longitude', Float),
+    UniqueConstraint('camera_id', 'violation_date', name='unique_camera_violation')
 )
 
 crashes_table = Table(
