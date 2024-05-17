@@ -18,11 +18,11 @@ pip install -r requirements.txt
 
 ## 2. Configuration
 Create a .env file as .env.example and update the following environment variables:
---PostgreSQL Database Credentials
-PGHOST=
-PGDATABASE=
-PGUSER=
-PGPASSWORD=
+-- PostgreSQL Database Credentials
+- PGHOST=
+- PGDATABASE=
+- PGUSER=
+- PGPASSWORD=
 
 ## 3.Running the Tool
 ### 1.Create Database Tables:
