@@ -29,7 +29,7 @@ redlight_cam_table = Table(
     Column('violations', Integer),
     Column('latitude', Float),
     Column('longitude', Float),
-    UniqueConstraint('camera_id', 'violation_date', name='unique_camera_violation')
+    UniqueConstraint('camera_id', 'violation_date', name='unique_redlight_violation')
 )
 
 speed_cam_table = Table(
@@ -41,7 +41,7 @@ speed_cam_table = Table(
     Column('violations', Integer),
     Column('latitude', Float),
     Column('longitude', Float),
-    UniqueConstraint('camera_id', 'violation_date', name='unique_camera_violation')
+    UniqueConstraint('camera_id', 'violation_date', name='unique_speed_violation')
 )
 
 crashes_table = Table(
