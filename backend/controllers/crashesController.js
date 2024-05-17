@@ -3,9 +3,9 @@ const { point, featureCollection } = require("@turf/helpers");
 
 async function getCrashesMap(req, res) {
     try {
-        const { gridSize, boundingBox, startDate, endDate } = req.query;
+        const { gridSize, boundingBox, startDate, endDate, streetName } = req.query;
         let bb = JSON.parse(boundingBox);
-        const query = `SELECT 
+        let query = `SELECT 
         ST_AsText(ST_SnapToGrid(ST_GeomFromText('POINT(' || longitude || ' ' || latitude || ')'), ${gridSize})) AS snapped_point,
         count(*) AS count
     FROM 
@@ -16,8 +16,11 @@ async function getCrashesMap(req, res) {
             ST_GeomFromText('POLYGON((${bb[0][0]} ${bb[0][1]}, ${bb[1][0]} ${bb[1][1]}, ${bb[2][0]} ${bb[2][1]}, ${bb[3][0]} ${bb[3][1]}, ${bb[0][0]} ${bb[0][1]}))')
         )
         AND crash_date >= '${startDate}' 
-        AND crash_date < '${endDate}'
-    GROUP BY 
+        AND crash_date < '${endDate}' `
+    if (streetName) {
+        query += `AND street_name = '${streetName}' `
+    }
+    query += `GROUP BY 
         ST_SnapToGrid(ST_GeomFromText('POINT(' || longitude || ' ' || latitude || ')'), ${gridSize});`;
         const result = await client.query(query);
         const features = result.rows.map((row) => {
@@ -56,8 +59,8 @@ async function getCrashesTable(req, res) {
     try {
         const { streetName, startDate, endDate, pageSize, pageIndex } = req.query;
         const limit = pageSize;
-        const offset = (pageIndex - 1) * pageSize;
-        let query = `SELECT street_name, crash_date, prim_contributory_cause, weather_condition, lighting_condition FROM crashes WHERE crash_date >= '${startDate}' AND crash_date < '${endDate}'`;
+        const offset = pageIndex * pageSize;
+        let query = `SELECT crash_record_id, street_name, crash_date, prim_contributory_cause, weather_condition, lighting_condition FROM crashes WHERE crash_date >= '${startDate}' AND crash_date < '${endDate}'`;
         if (streetName) {
             query += ` AND street_name = '${streetName}'`;
         }
@@ -66,6 +69,7 @@ async function getCrashesTable(req, res) {
 
         const crashes = result.rows.map((row) => {
             return {
+                id: row.crash_record_id,
                 streetName: row.street_name,
                 crashDate: row.crash_date,
                 primaryCause: row.prim_contributory_cause,
@@ -90,7 +94,25 @@ async function getCrashesTable(req, res) {
     }
 }
 
+async function getCrashesStreetNames(req, res) {
+    try {
+        let query = `SELECT DISTINCT ON (street_name) crash_record_id, street_name FROM crashes;`;
+        const result = await client.query(query);
+        const streetNames = result.rows.map((row) => {
+            return {
+                id: row.crash_record_id,
+                streetName: row.street_name,
+            };
+        });
+        res.status(200).json(streetNames);
+    } catch (error) {
+        console.error("Error executing query:", error);
+        res.status(500).json({ msg: "Internal Server Error" });
+    }
+}
+
 module.exports = {
     getCrashesTable,
     getCrashesMap,
+    getCrashesStreetNames,
 };

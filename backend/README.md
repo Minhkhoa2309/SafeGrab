@@ -1,4 +1,5 @@
-# BACKEND VERSION 1.1
+# BACKEND VERSION 1.1.1
+
 ## Functions
 - Add API paths to pull summarized data + map modelling for:
   - Speed violations
@@ -41,6 +42,8 @@ The base API route is /api/v1
   - Same as /redlights/table but without the intersection field
 - /crashes/table: GET JSON of information in crashes. Request query includes
   - Same as /redlights/table but change the intersection field to 'streetName' field to filter street name
+- /crashes/streetnames: GET all available street names
+- /redlights/intersections: GET all available intersections
 
 ## Future Plans
 - Code refactoring
@@ -50,3 +53,14 @@ The base API route is /api/v1
 
 ## Credits
 - All datasets taken from [City of Chicago's open data portal](https://data.cityofchicago.org/).
+
+## Change log
+- 1.1.1:
+  - Fix bugs in table where offset may be negative number
+  - Add filters
+    - Street name filter to /crashes/map
+    - Intersection filter to /redlight/map
+  - Add two new api paths:
+    - /crashes/streetnames
+    - /redlights/intersections
+  - Add security package

@@ -52,12 +52,13 @@ async function getSpeedViolationsTable(req, res) {
     try {
         const { startDate, endDate, pageSize, pageIndex } = req.query;
         const limit = pageSize;
-        const offset = (pageIndex - 1) * pageSize;
-        let query = `SELECT address, violation_date, violations FROM redlight_cam WHERE violation_date >= '${startDate}' AND violation_date < '${endDate}' LIMIT ${limit} OFFSET ${offset};`;
+        const offset = pageIndex * pageSize;
+        let query = `SELECT id, address, violation_date, violations FROM redlight_cam WHERE violation_date >= '${startDate}' AND violation_date < '${endDate}' LIMIT ${limit} OFFSET ${offset};`;
         const result = await client.query(query);
 
         const violations = result.rows.map((row) => {
             return {
+                id: row.id,
                 address: row.address,
                 violationDate: row.violation_date,
                 violationCount: row.violations,

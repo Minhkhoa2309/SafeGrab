@@ -6,5 +6,7 @@ router.route('/redlights/map')
     .get(redlightsController.getRedlightViolationsMap)
 router.route('/redlights/table')
     .get(redlightsController.getRedlightViolationsTable)
+router.route('/redlights/intersections')
+    .get(redlightsController.getRedlightViolationsIntersections)
 
 module.exports = router
