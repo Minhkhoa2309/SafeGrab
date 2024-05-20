@@ -1,5 +1,5 @@
 // ** React imports
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 // ** MUI Imports
 import Typography from '@mui/material/Typography'
@@ -8,6 +8,11 @@ import { Box } from '@mui/material'
 
 // ** Utils Imports
 import { formatDate } from 'src/layouts/utils/format'
+import { AppDispatch, RootState } from 'src/store'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchDataTable } from 'src/store/speeds'
+import { DateType } from 'src/types/DatepickerTypes'
+import { format } from 'date-fns'
 
 const columns: GridColDef[] = [
     {
@@ -30,76 +35,71 @@ const columns: GridColDef[] = [
         type: 'date',
         minWidth: 50,
         headerName: 'Violation Date',
-        field: 'violation_date',
+        field: 'violationDate',
         valueGetter: params => new Date(params.value),
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {formatDate(params.row.violation_date)}
+                {formatDate(params.row.violationDate)}
             </Typography>
         )
     },
     {
         flex: 0.2,
         minWidth: 200,
-        field: 'violations',
-        headerName: 'Violations',
+        field: 'violationCount',
+        headerName: 'Violations Count',
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {params.row.violations}
+                {params.row.violationCount}
             </Typography>
         )
     }
 ]
 
-const SpeedTable = ({ filter }: { filter: string }) => {
-    const [rows, setRows] = useState<any[]>([])
+interface filterProps {
+    startDate: DateType
+    endDate: DateType
+}
+
+const SpeedTable = ({ startDate, endDate }: filterProps) => {
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 })
-    const [total, setTotal] = useState<number>(0)
+    const [loading, setLoading] = useState<boolean>(false);
 
-    const fetchTableData = useCallback(async () => {
-        await fetch(
-            `https://data.cityofchicago.org/resource/hhkd-xvj4.json?$limit=${paginationModel.pageSize}&$offset=${paginationModel.page}&$where=${encodeURIComponent(filter)}`
-        )
-            .then(response => response.json())
-            .then(data => {
-                setRows(data);
-                
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            });
-    }, [paginationModel, filter]);
-
-    const fetchTotalCount = useCallback(async () => {
-        await fetch(
-            `https://data.cityofchicago.org/resource/hhkd-xvj4.json?$select=count(*) as total&$where=${encodeURIComponent(filter)}`
-        ).then(response => response.json())
-            .then(data => {
-                setTotal(Number(data[0].total))
-            })
-            .catch(error => {
-                console.error('Error fetching Total:', error);
-            });
-    }, [filter])
+    // ** Hooks
+    const dispatch = useDispatch<AppDispatch>()
+    const store = useSelector((state: RootState) => state.speeds)
 
     useEffect(() => {
-        fetchTotalCount();
-        fetchTableData();
-    }, [fetchTotalCount, fetchTableData, paginationModel, filter])
-
+        if (!startDate || !endDate) {
+            return;
+        }
+        setLoading(true);
+        const formattedStartDate = format(startDate as Date | number, 'yyyy-MM-dd');
+        const formattedEndDate = format(endDate as Date | number, 'yyyy-MM-dd');
+        dispatch(
+            fetchDataTable({
+                pageIndex: paginationModel.page,
+                pageSize: paginationModel.pageSize,
+                startDate: formattedStartDate,
+                endDate: formattedEndDate
+            })
+        )
+        setLoading(false);
+    }, [dispatch, startDate, endDate, paginationModel])
 
     return (
         <Box sx={{ height: 600 }}>
             <DataGrid
                 pagination
-                rows={rows}
-                getRowId={(row) => `${row.address}_${row.violation_date}_${row.violations}`}
-                rowCount={total}
+                rows={store.data}
+                getRowId={(row) => row.id}
+                rowCount={store.total}
                 columns={columns}
                 paginationMode='server'
                 pageSizeOptions={[25, 50, 100]}
                 paginationModel={paginationModel}
                 onPaginationModelChange={setPaginationModel}
+                loading={loading}
             />
         </Box>
     )

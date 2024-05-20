@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl, { GeoJSONSource } from 'mapbox-gl';
 
 import { useForm, Controller } from 'react-hook-form';
-import { Box, Button, CircularProgress, FormControl, Grid, TextField, useTheme } from '@mui/material';
-import CustomCheckbox from 'src/@core/components/custom-checkbox';
+import { Box, Button, CircularProgress, FormControl, Grid, TextField } from '@mui/material';
+import Icon from 'src/@core/components/icon';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 
 interface FormInputs {
     startLocation: string
@@ -22,14 +23,12 @@ const Map = () => {
     const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_TOKEN || '';
-    const [crashLayerVisible, setCrashLayerVisible] = useState<boolean>(true);
-    const [speedLayerVisible, setSpeedLayerVisible] = useState<boolean>(true);
-    const [redlightLayerVisible, setRedlightLayerVisible] = useState<boolean>(true);
-    const theme = useTheme();
 
     const {
         control,
         handleSubmit,
+        setValue,
+        getValues,
         formState: { errors }
     } = useForm<FormInputs>({ defaultValues })
 
@@ -57,109 +56,6 @@ const Map = () => {
         setLoading(false)
     }
 
-    const fetchLayer = useCallback(async () => {
-        if (!map) return;
-
-        await fetch(
-            `https://data.cityofchicago.org/resource/85ca-t3if.geojson`
-        )
-            .then(response => response.json())
-            .then((data: GeoJSON.FeatureCollection<GeoJSON.Geometry>) => {
-                // Remove existing layer and source if they exist
-                if (map.getSource('crash-data')) {
-                    map.removeLayer('crash-data-layer');
-                    map.removeSource('crash-data');
-                }
-
-                // Add the GeoJSON as a source to the map
-                map.addSource('crash-data', {
-                    type: 'geojson',
-                    data: data
-                });
-
-                // Add a layer to display the GeoJSON data
-                map.addLayer({
-                    id: 'crash-data-layer',
-                    type: 'circle',
-                    source: 'crash-data',
-                    paint: {
-                        'circle-color': theme.palette.error.main,
-                        'circle-opacity': 0.8,
-                        'circle-radius': 3
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching Crash data:', error);
-            });
-
-        await fetch(
-            `https://data.cityofchicago.org/resource/spqx-js37.geojson`
-        )
-            .then(response => response.json())
-            .then(data => {
-                // Remove existing layer and source if they exist
-                if (map.getSource('redlight-data')) {
-                    map.removeLayer('redlight-data-layer');
-                    map.removeSource('redlight-data');
-                }
-
-                // Add the GeoJSON as a source to the map
-                map.addSource('redlight-data', {
-                    type: 'geojson',
-                    data: data
-                });
-
-                // Add a layer to display the GeoJSON data
-                map.addLayer({
-                    id: 'redlight-data-layer',
-                    type: 'circle',
-                    source: 'redlight-data',
-                    paint: {
-                        'circle-color': theme.palette.warning.main,
-                        'circle-opacity': 0.8,
-                        'circle-radius': 3
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            });
-
-        await fetch(
-            `https://data.cityofchicago.org/resource/hhkd-xvj4.geojson`
-        )
-            .then(response => response.json())
-            .then(data => {
-                // Remove existing layer and source if they exist
-                if (map.getSource('speed-data')) {
-                    map.removeLayer('speed-data-layer');
-                    map.removeSource('speed-data');
-                }
-
-                // Add the GeoJSON as a source to the map
-                map.addSource('speed-data', {
-                    type: 'geojson',
-                    data: data
-                });
-
-                // Add a layer to display the GeoJSON data
-                map.addLayer({
-                    id: 'speed-data-layer',
-                    type: 'circle',
-                    source: 'speed-data',
-                    paint: {
-                        'circle-color': theme.palette.info.main,
-                        'circle-opacity': 0.8,
-                        'circle-radius': 3
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            });
-    }, [map]);
-
     useEffect(() => {
         mapboxgl.accessToken = accessToken;
         const initializedMap = new mapboxgl.Map({
@@ -169,27 +65,72 @@ const Map = () => {
             zoom: 9
         });
         setMap(initializedMap);
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            reverseGeocode: true,
+            flipCoordinates: true,
+            language: 'en',
+            marker: false
+        });
 
-        // initializedMap.on('load', () => {
-        //     // Add any initializations that depend on the map being loaded
-        //     initializedMap.addSource('custom-tileset', {
-        //         type: 'vector',
-        //         url: `mapbox://supoleo.dr5wghdf`
-        //     });
+        initializedMap.addControl(geocoder, 'top-right');
 
-        //     initializedMap.addLayer({
-        //         id: 'custom-tileset-layer',
-        //         type: 'circle',
-        //         source: 'custom-tileset',
-        //         'source-layer': 'stations-9zu36c', // Replace with your source layer name
-        //         paint: {
-        //             'circle-color': '#d60000',
-        //             'circle-opacity': 1,
-        //             'circle-radius': 3
-        //         }
-        //     });
-        // });
+        initializedMap.on('click', (e) => {
+            const coords = e.lngLat.toArray();
+            const point: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: {
+                            type: 'Point',
+                            coordinates: coords
+                        }
+                    }
+                ]
+            };
 
+            if (!getValues('startLocation')) {
+                setValue('startLocation', `${e.lngLat.lng}, ${e.lngLat.lat}`);
+                if (initializedMap.getLayer('start')) {
+                    (initializedMap.getSource('start') as GeoJSONSource).setData(point);
+                } else {
+                    initializedMap.addLayer({
+                        id: 'start',
+                        type: 'circle',
+                        source: {
+                            type: 'geojson',
+                            data: point
+                        },
+                        paint: {
+                            'circle-radius': 10,
+                            'circle-color': '#3887be'
+                        }
+                    });
+                }
+
+            } else if (!getValues('endLocation')) {
+                setValue('endLocation', `${e.lngLat.lng}, ${e.lngLat.lat}`);
+                if (initializedMap.getLayer('end')) {
+                    (initializedMap.getSource('end') as GeoJSONSource).setData(point);
+                } else {
+                    initializedMap.addLayer({
+                        id: 'end',
+                        type: 'circle',
+                        source: {
+                            type: 'geojson',
+                            data: point
+                        },
+                        paint: {
+                            'circle-radius': 10,
+                            'circle-color': '#f30'
+                        }
+                    });
+                }
+            }
+        });
 
         return () => {
             initializedMap.remove();
@@ -199,19 +140,10 @@ const Map = () => {
 
     useEffect(() => {
         if (map && routes && selectedRouteIndex !== null) {
-            // Add click event listener at the map level
-            map.on('click', (e) => {
-                const clickedFeature = map.queryRenderedFeatures(e.point, { layers: ['route-layer'] });
-
-                if (clickedFeature.length > 0) {
-                    const clickedRouteIndex = Number(clickedFeature[0].properties?.index);
-                    selectRoute(clickedRouteIndex);
-                }
-            });
 
             routes.forEach((routeData, index) => {
                 const sourceId = `route-${index}`;
-                const lineColor = index === selectedRouteIndex ? '#A0A0A0' : '#72E128';
+                const lineColor = index === selectedRouteIndex ? '#72E128' : '#A0A0A0';
 
                 if (map.getSource(sourceId)) {
                     const geojson: GeoJSON.Feature<GeoJSON.Geometry> = {
@@ -248,83 +180,16 @@ const Map = () => {
                     });
                 }
             });
+
+            // Bring the selected route to the front
+            if (map.getLayer(`route-${selectedRouteIndex}`)) {
+                map.moveLayer(`route-${selectedRouteIndex}`);
+            }
         }
     }, [map, routes, selectedRouteIndex]);
 
-    useEffect(() => {
-        fetchLayer();
-    }, [fetchLayer]);
-
-    const toggleCrashLayerVisibility = () => {
-        setCrashLayerVisible(!crashLayerVisible);
-        if (map && map.getLayer('crash-data-layer')) {
-            map.setLayoutProperty('crash-data-layer', 'visibility', crashLayerVisible ? 'none' : 'visible');
-        }
-    };
-
-    const toggleRedlightLayerVisibility = () => {
-        setRedlightLayerVisible(!redlightLayerVisible);
-        if (map && map.getLayer('redlight-data-layer')) {
-            map.setLayoutProperty('redlight-data-layer', 'visibility', redlightLayerVisible ? 'none' : 'visible');
-        }
-    };
-
-    const toggleSpeedLayerVisibility = () => {
-        setSpeedLayerVisible(!speedLayerVisible);
-        if (map && map.getLayer('speed-data-layer')) {
-            map.setLayoutProperty('speed-data-layer', 'visibility', speedLayerVisible ? 'none' : 'visible');
-        }
-    };
-
-    const selectRoute = (index: number) => {
-        if (!map) return;
-        if (index !== selectedRouteIndex) {
-            // Change the color of the previously selected route to gray
-            if (selectedRouteIndex !== null) {
-                const previousSourceId = `route-${selectedRouteIndex}`;
-                map.setPaintProperty(previousSourceId, 'line-color', '#A0A0A0');
-            }
-
-            // Change the color of the newly selected route to green
-            const newSourceId = `route-${index}`;
-            map.setPaintProperty(newSourceId, 'line-color', '#72E128');
-
-            setSelectedRouteIndex(index);
-        }
-    };
-
     return (
         <Grid container spacing={3}>
-            <Grid item xs={12} sm={12}>
-                <Grid container spacing={4}>
-                    <Grid item sm={2} xs={4} >
-                        <CustomCheckbox
-                            title='Traffic Crashes'
-                            handleChange={toggleCrashLayerVisibility}
-                            selected={crashLayerVisible}
-                            color='error'
-                        />
-                    </Grid>
-                    <Grid item sm={2} xs={4} >
-                        <CustomCheckbox
-                            title='Redlight Violations'
-                            handleChange={toggleRedlightLayerVisibility}
-                            selected={redlightLayerVisible}
-                            color='warning'
-                        />
-                    </Grid>
-                    <Grid item sm={2} xs={4} >
-                        <CustomCheckbox
-                            title='Speed Violations'
-                            handleChange={toggleSpeedLayerVisibility}
-                            selected={speedLayerVisible}
-                            color='info'
-                        />
-                    </Grid>
-
-
-                </Grid>
-            </Grid>
             <Grid item xs={12} sm={12}>
                 <Box sx={{ position: 'absolute', background: 'rgba(255, 255, 255, 0.8)', zIndex: 1, padding: '10px', borderRadius: '5px', mt: '5px', ml: '20px' }}>
                     <form onSubmit={handleSubmit(onSubmit)}>
@@ -377,8 +242,8 @@ const Map = () => {
                                                 mr: theme => theme.spacing(2)
                                             }}
                                         />
-                                    ) : null}
-                                    Submit
+                                    ) : <Icon icon='mdi:directions' />}
+                                    Directions
                                 </Button>
                             </Grid>
                         </Grid>
