@@ -2,3 +2,5 @@ data/
 diagrams/
 node_modules/
 .env
+local-server.cert
+local-server.key

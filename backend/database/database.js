@@ -1,7 +1,7 @@
 const { Client } = require("pg");
 
 const client = new Client({
-    host: process.env.POSTGRES_HOST_PRODUCTION,
+    host: process.env.POSTGRES_HOST_LOCAL,
     port: Number(process.env.POSTGRES_PORT),
     user: process.env.POSTGRES_USERNAME,
     password: process.env.POSTGRES_PASSWORD,
