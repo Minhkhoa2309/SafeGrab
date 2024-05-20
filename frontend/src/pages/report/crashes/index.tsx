@@ -1,5 +1,5 @@
 import React, { SyntheticEvent, useEffect, useState } from 'react';
-import { Autocomplete, Box, Card, CardContent, CardHeader, Grid, TextField, Typography } from '@mui/material';
+import { Autocomplete, Card, CardContent, CardHeader, FormControl, Grid, TextField, Typography } from '@mui/material';
 import Tab from '@mui/material/Tab'
 import TabList from '@mui/lab/TabList'
 import TabPanel from '@mui/lab/TabPanel'
@@ -10,9 +10,11 @@ import Icon from 'src/@core/components/icon';
 import PageHeader from 'src/@core/components/page-header';
 import PickersRange from 'src/layouts/components/pickers/PickerRange';
 import DatePickerWrapper from 'src/@core/styles/libs/react-date-picker';
-import { format } from 'date-fns';
 import { DateType } from 'src/types/DatepickerTypes';
 import { StreetOptionType } from 'src/types/StreetOptionType';
+import { AppDispatch } from 'src/store';
+import { useDispatch } from 'react-redux';
+import { fetchStreetNames } from 'src/store/crashes';
 
 const CrashReport = () => {
     // ** States
@@ -21,41 +23,23 @@ const CrashReport = () => {
     const [endDate, setEndDate] = useState<DateType>(new Date())
     const [street, setStreet] = useState<StreetOptionType | null>(null)
     const [streetOptions, setStreetOptions] = useState<StreetOptionType[]>([])
-    const [filterString, setFilterString] = useState<string>('');
+
+    // ** Hooks
+    const dispatch = useDispatch<AppDispatch>()
 
     useEffect(() => {
         const getOptions = async () => {
-            await fetch(
-                `https://data.cityofchicago.org/api/id/85ca-t3if.json?$query=SELECT%20%60street_name%60%2C%20count(%60street_name%60)%20as%20%60__count_alias__%60 %20GROUP%20BY%20%60street_name%60%20ORDER%20BY%20%60__count_alias__%60%20desc&$$read_from_nbe=true&$$version=2.1`
-            ).then(response => response.json())
-                .then((data: StreetOptionType[]) => {
-                    setStreetOptions(data);
-                })
-                .catch(error => {
-                    console.error('Error fetching Total:', error);
+            await dispatch(fetchStreetNames())
+                .then((response) => {
+                    if (response.payload) {
+                        setStreetOptions(response.payload);
+                    }
+                }).catch(error => {
+                    console.error('Error fetching Map:', error);
                 });
         }
         getOptions();
-    }, [])
-
-    useEffect(() => {
-        const formatFilterString = () => {
-            if (!startDate || !endDate) {
-                return;
-            }
-            const formattedStartDate = format(startDate as Date | number, 'yyyy-MM-dd');
-            const formattedEndDate = format(endDate as Date | number, 'yyyy-MM-dd');
-            let filter = `crash_date >= '${formattedStartDate}' AND crash_date < '${formattedEndDate}'`;
-
-            if (street && street.street_name) {
-                filter += ` AND (street_name = '${street.street_name}')`;
-            }
-
-            setFilterString(filter);
-        }
-
-        formatFilterString();
-    }, [startDate, endDate, street]);
+    }, [dispatch])
 
     const handleChangeStreet = (event: SyntheticEvent, newStreet: StreetOptionType | null) => {
         setStreet(newStreet)
@@ -74,31 +58,37 @@ const CrashReport = () => {
     return (
         <DatePickerWrapper >
             <Grid container spacing={6}>
-                <PageHeader
-                    subtitle={<Typography variant='body2'>Shows each crash that occured within city streets as reported in the electronic crash reporting system (E-Crash) at CPD</Typography>}
-                    title={
-                        <Typography variant='h5'>
-                            Traffic Crashes Report
-                        </Typography>
-                    }
-                />
+                <Grid item xs={12}>
+                    <PageHeader
+                        title={
+                            <Typography variant='h5'>
+                                Traffic Crashes Report
+                            </Typography>
+                        }
+                        subtitle={
+                            <Typography variant='body2'>
+                                Shows each crash that occured within city streets as reported in the electronic crash reporting system (E-Crash) at CPD
+                            </Typography>
+                        }
+                    />
+                </Grid>
                 <Grid item xs={12}>
                     <Card>
-                        <CardHeader title={'Filter'} />
+                        <CardHeader title='Search Filters' sx={{ pb: 4, '& .MuiCardHeader-title': { letterSpacing: '.15px' } }} />
                         <CardContent>
                             <Grid container spacing={3}>
                                 <Grid item xs={12} sm={4}>
-                                    <Box className='demo-space-x' sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                                    <FormControl fullWidth>
                                         <Autocomplete
                                             fullWidth
                                             value={street}
                                             options={streetOptions}
                                             onChange={handleChangeStreet}
                                             id='autocomplete-controlled'
-                                            getOptionLabel={option => option.street_name || ''}
+                                            getOptionLabel={option => option.streetName || ''}
                                             renderInput={params => <TextField {...params} label='Street Name' />}
                                         />
-                                    </Box>
+                                    </FormControl>
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
                                     <PickersRange startDate={startDate} endDate={endDate} handleChange={handleChangeDate} />
@@ -110,18 +100,18 @@ const CrashReport = () => {
                 <Grid item xs={12}>
                     <Card>
                         <TabContext value={tab}>
-                            <TabList onChange={handleChange} centered>
+                            <TabList onChange={handleChange}>
                                 <Tab value='1' label='Table' icon={<Icon icon='mdi:table' />} />
                                 <Tab value='2' label='Map' icon={<Icon icon='mdi:world' />} />
                             </TabList>
                             <TabPanel value='1'>
                                 <Grid item xs={12} sm={12}>
-                                    <CrashTable filter={filterString} />
+                                    <CrashTable startDate={startDate} endDate={endDate} streetName={street?.streetName} />
                                 </Grid>
                             </TabPanel>
                             <TabPanel value='2'>
                                 <Grid item xs={12} sm={12}>
-                                    <CrashMap filter={filterString} />
+                                    <CrashMap startDate={startDate} endDate={endDate} streetName={street?.streetName} />
                                 </Grid>
                             </TabPanel>
                         </TabContext>

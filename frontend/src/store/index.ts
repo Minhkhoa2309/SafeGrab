@@ -1,11 +1,15 @@
 // ** Toolkit imports
 import { configureStore } from '@reduxjs/toolkit'
-import user from './user'
+import crashes from './crashes'
+import speeds from './speeds'
+import redlights from './redlights'
 
 
 export const store = configureStore({
   reducer: {
-    user
+    crashes,
+    speeds,
+    redlights
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
