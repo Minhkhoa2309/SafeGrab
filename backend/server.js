@@ -6,9 +6,9 @@ const cors = require("cors");
 const rateLimiter = require("express-rate-limit");
 
 // HTTPS-related packages
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
+// const https = require("https");
+// const fs = require("fs");
+// const path = require("path");
 
 // ExpressJS package
 const express = require("express");
@@ -45,23 +45,23 @@ app.use("/", (req, res) => {
 });
 
 const port = process.env.PORT || 5000;
-const sslOptions = {
-    key: fs.readFileSync(
-        path.join(__dirname, process.env.SSL_KEY_PATH || "local-server.key")
-    ),
-    cert: fs.readFileSync(
-        path.join(__dirname, process.env.SSL_CERT_PATH || "local-server.cert")
-    ),
-};
+// const sslOptions = {
+//     key: fs.readFileSync(
+//         path.join(__dirname, process.env.SSL_KEY_PATH || "local-server.key")
+//     ),
+//     cert: fs.readFileSync(
+//         path.join(__dirname, process.env.SSL_CERT_PATH || "local-server.cert")
+//     ),
+// };
 const startServer = () => {
     try {
         connectDatabase();
-        https.createServer(sslOptions, app).listen(port, () => {
-            console.log("HTTPS Server is listening on port " + port);
-        });
-        // app.listen(port, () => {
-        //     console.log("Server is listening on port " + port);
+        // https.createServer(sslOptions, app).listen(port, () => {
+        //     console.log("HTTPS Server is listening on port " + port);
         // });
+        app.listen(port, () => {
+            console.log("Server is listening on port " + port);
+        });
     } catch (error) {
         console.log(error);
     }
