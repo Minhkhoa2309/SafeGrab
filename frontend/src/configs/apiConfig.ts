@@ -1,3 +1,3 @@
 export default {
-    apiEndpoint: 'http://34.124.146.177/api/v1'
+    apiEndpoint: 'https://safegrab.onrender.com/api/v1'
 }
