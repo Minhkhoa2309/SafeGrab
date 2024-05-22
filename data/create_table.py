@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, TIMESTAMP
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, text
 
 # Load environment variables from .env file
 load_dotenv()
@@ -66,5 +66,10 @@ crashes_table = Table(
 
 # Create tables
 metadata.create_all(engine)
+
+with engine.connect() as connection:
+    connection.execute(text("ALTER TABLE crashes ADD COLUMN geom geometry(Point, 4326);"))
+    connection.execute(text("UPDATE crashes SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326);"))
+    connection.execute(text("CREATE INDEX idx_crashes_geom ON crashes USING GIST (geom);"))
 
 print("Tables created successfully!")
