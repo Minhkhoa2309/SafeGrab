@@ -1,10 +1,11 @@
-# BACKEND VERSION 1.1.1
+# BACKEND VERSION 1.1.2
 
 ## Functions
 - Add API paths to pull summarized data + map modelling for:
   - Speed violations
   - Red lights violations
   - Crashes
+- Add crashes in the past when navigating routes
 
 ## Usage
 Download all npm package dependencies
@@ -18,6 +19,7 @@ POSTGRES_PORT=<PORT-NUMBER>
 POSTGRES_USERNAME=<USERNAME>
 POSTGRES_PASSWORD=<PASSWORD>
 POSTGRES_DATABASE=<DATABASE-NAME>
+MAP_BOX_ACCESS_TOKEN=<TOKEN>
 ```
 Run the code
 ```
@@ -44,17 +46,23 @@ The base API route is /api/v1
   - Same as /redlights/table but change the intersection field to 'streetName' field to filter street name
 - /crashes/streetnames: GET all available street names
 - /redlights/intersections: GET all available intersections
+- /navigation: GET crashes in navigating paths. Request query includes
+  - coordinates: an array of two arrays storing the coordinate of starting point and ending point
+  - startDate: filter date of crashes
+  - endDate: filter date of crashes
 
 ## Future Plans
 - Code refactoring
 - Error handling
 - Authentication
-- Show danger zones / warning points when user query desired traffic routes using two coordinates --> get desired path to user
 
 ## Credits
 - All datasets taken from [City of Chicago's open data portal](https://data.cityofchicago.org/).
 
 ## Change log
+- 1.1.2:
+  - Add crashes shown in path navigation
+  - Add MAP_BOX_ACCESS_TOKEN in .env
 - 1.1.1:
   - Fix bugs in table where offset may be negative number
   - Add filters

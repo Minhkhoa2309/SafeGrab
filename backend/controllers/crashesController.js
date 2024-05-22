@@ -22,7 +22,6 @@ async function getCrashesMap(req, res) {
     }
     query += `GROUP BY 
         ST_SnapToGrid(ST_GeomFromText('POINT(' || longitude || ' ' || latitude || ')'), ${gridSize});`;
-        console.log(query)
         const result = await client.query(query);
         const features = result.rows.map((row) => {
             const pointString = row.snapped_point

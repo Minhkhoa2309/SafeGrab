@@ -54,7 +54,7 @@ async function getCrashesInPath(req, res) {
             GROUP BY
                 circles.point_text;
             `;
-
+            
             const result = await client.query(query);
             const features = result.rows.map((row) => {
                 const pointString = row.point
