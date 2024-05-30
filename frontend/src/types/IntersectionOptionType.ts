@@ -1,4 +1,4 @@
 export type IntersectionOptionType = {
-    id: string
+    total: number
     intersection: string
 }

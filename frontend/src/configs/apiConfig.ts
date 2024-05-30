@@ -1,3 +1,3 @@
 export default {
-    apiEndpoint: 'https://safegrab.onrender.com/api/v1'
+    apiEndpoint: 'https://data.cityofchicago.org'
 }

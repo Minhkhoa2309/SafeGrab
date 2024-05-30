@@ -67,7 +67,7 @@ const RedlightMap = ({ startDate, endDate, intersection }: filterProps) => {
             initializedMap.on('click', 'unclustered-point', (e) => {
                 if (!e.features || e.features[0].geometry.type != 'Point') return
                 const coordinates = e.features[0].geometry.coordinates.slice();
-                const count = e.features[0].properties?.count | 0;
+                const count = e.features[0].properties?.total | 0;
 
                 // Ensure that if the map is zoomed out such that
                 // multiple copies of the feature are visible, the
@@ -99,7 +99,7 @@ const RedlightMap = ({ startDate, endDate, intersection }: filterProps) => {
                 clusterMaxZoom: 14,
                 clusterRadius: 50,
                 clusterProperties: {
-                    sum: ["+", ["to-number", ["get", "count", ["properties"]]]],
+                    sum: ["+", ["to-number", ["get", "total", ["properties"]]]],
                 },
             });
 
@@ -213,12 +213,7 @@ const RedlightMap = ({ startDate, endDate, intersection }: filterProps) => {
                 startDate: formattedStartDate,
                 endDate: formattedEndDate,
                 gridSize: cellSize,
-                boundingBox: JSON.stringify([
-                    [mapBounds[0][0], mapBounds[0][1]],
-                    [mapBounds[0][0], mapBounds[1][1]],
-                    [mapBounds[1][0], mapBounds[1][1]],
-                    [mapBounds[1][0], mapBounds[0][1]]
-                ])
+                boundingBox: `'POLYGON((${mapBounds[0][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[0][1]}))'`
             })
         ).then((response) => {
             if (response.payload && map.getSource('clusters')) {

@@ -10,7 +10,7 @@ import { Box } from '@mui/material'
 import { formatDate } from 'src/layouts/utils/format'
 import { AppDispatch, RootState } from 'src/store'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchDataTable } from 'src/store/speeds'
+import { fetchDataCount, fetchDataTable } from 'src/store/speeds'
 import { DateType } from 'src/types/DatepickerTypes'
 import { format } from 'date-fns'
 
@@ -35,22 +35,22 @@ const columns: GridColDef[] = [
         type: 'date',
         minWidth: 50,
         headerName: 'Violation Date',
-        field: 'violationDate',
+        field: 'violation_date',
         valueGetter: params => new Date(params.value),
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {formatDate(params.row.violationDate)}
+                {formatDate(params.row.violation_date)}
             </Typography>
         )
     },
     {
         flex: 0.2,
         minWidth: 200,
-        field: 'violationCount',
+        field: 'violations',
         headerName: 'Violations Count',
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {params.row.violationCount}
+                {params.row.violations}
             </Typography>
         )
     }
@@ -84,6 +84,12 @@ const SpeedTable = ({ startDate, endDate }: filterProps) => {
                 endDate: formattedEndDate
             })
         )
+        dispatch(
+            fetchDataCount({
+                startDate: formattedStartDate,
+                endDate: formattedEndDate
+            })
+        )
         setLoading(false);
     }, [dispatch, startDate, endDate, paginationModel])
 
@@ -92,7 +98,7 @@ const SpeedTable = ({ startDate, endDate }: filterProps) => {
             <DataGrid
                 pagination
                 rows={store.data}
-                getRowId={(row) => row.id}
+                getRowId={(row) => `${row.camera_id}_${row.violation_date}_${row.violations}`}
                 rowCount={store.total}
                 columns={columns}
                 paginationMode='server'

@@ -85,7 +85,7 @@ const CrashReport = () => {
                                             options={streetOptions}
                                             onChange={handleChangeStreet}
                                             id='autocomplete-controlled'
-                                            getOptionLabel={option => option.streetName || ''}
+                                            getOptionLabel={option => option.street_name || ''}
                                             renderInput={params => <TextField {...params} label='Street Name' />}
                                         />
                                     </FormControl>
@@ -106,12 +106,12 @@ const CrashReport = () => {
                             </TabList>
                             <TabPanel value='1'>
                                 <Grid item xs={12} sm={12}>
-                                    <CrashTable startDate={startDate} endDate={endDate} streetName={street?.streetName} />
+                                    <CrashTable startDate={startDate} endDate={endDate} streetName={street?.street_name} />
                                 </Grid>
                             </TabPanel>
                             <TabPanel value='2'>
                                 <Grid item xs={12} sm={12}>
-                                    <CrashMap startDate={startDate} endDate={endDate} streetName={street?.streetName} />
+                                    <CrashMap startDate={startDate} endDate={endDate} streetName={street?.street_name} />
                                 </Grid>
                             </TabPanel>
                         </TabContext>
