@@ -221,7 +221,7 @@ const SpeedMap = ({ startDate, endDate }: filterProps) => {
         }).catch(error => {
             console.error('Error fetching Map:', error);
         });
-    }, [dispatch, startDate, endDate, mapZoom, mapBounds])
+    }, [dispatch, startDate, endDate, mapZoom, mapBounds, map])
 
     const handleChangeMapType = (event: ChangeEvent<HTMLInputElement>) => {
         const type = (event.target as HTMLInputElement).value;

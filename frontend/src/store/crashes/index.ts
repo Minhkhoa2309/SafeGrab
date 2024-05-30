@@ -47,6 +47,7 @@ export const fetchDataMap = createAsyncThunk('crash/fetchDataMap', async (params
                 $$app_token: 'U29jcmF0YS0td2VraWNrYXNz0'
             }
         });
+        
         return response.data;
     } catch (error) {
         throw error;
@@ -72,6 +73,7 @@ export const fetchDataTable = createAsyncThunk('crash/fetchDataTable', async (pa
                 $$version: '2.1'
             }
         });
+
         return response.data;
     } catch (error) {
         throw error;
@@ -87,6 +89,7 @@ export const fetchStreetNames = createAsyncThunk('crash/fetchStreetNames', async
                 $$version: '2.1'
             }
         });
+
         return response.data;
     } catch (error) {
         throw error;
@@ -111,6 +114,7 @@ export const fetchDataCount = createAsyncThunk('crash/fetchDataCount', async (pa
                 $$version: '2.1'
             }
         });
+
         return response.data;
     } catch (error) {
         throw error;

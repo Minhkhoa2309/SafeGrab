@@ -46,6 +46,7 @@ export const fetchDataTable = createAsyncThunk('redlights/fetchDataTable', async
                 $$version: '2.1'
             }
         });
+
         return response.data;
     } catch (error) {
         throw error;
@@ -73,6 +74,7 @@ export const fetchDataMap = createAsyncThunk('redlights/fetchDataMap', async (pa
                 $$app_token: 'U29jcmF0YS0td2VraWNrYXNz0'
             }
         });
+
         return response.data;
     } catch (error) {
         throw error;
@@ -88,6 +90,7 @@ export const fetchIntersection = createAsyncThunk('redlights/fetchIntersection',
                 $$version: '2.1'
             }
         });
+
         return response.data;
     } catch (error) {
         throw error;
@@ -112,6 +115,7 @@ export const fetchDataCount = createAsyncThunk('redlights/fetchDataCount', async
                 $$version: '2.1'
             }
         });
+        
         return response.data;
     } catch (error) {
         throw error;

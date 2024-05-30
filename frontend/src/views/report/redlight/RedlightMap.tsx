@@ -224,7 +224,7 @@ const RedlightMap = ({ startDate, endDate, intersection }: filterProps) => {
         }).catch(error => {
             console.error('Error fetching Map:', error);
         });
-    }, [dispatch, startDate, endDate, intersection, mapZoom, mapBounds])
+    }, [dispatch, startDate, endDate, intersection, mapZoom, mapBounds, map])
 
     const handleChangeMapType = (event: ChangeEvent<HTMLInputElement>) => {
         const type = (event.target as HTMLInputElement).value;
