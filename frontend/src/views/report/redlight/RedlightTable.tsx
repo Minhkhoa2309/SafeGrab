@@ -10,7 +10,7 @@ import { Box } from '@mui/material'
 import { formatDate } from 'src/layouts/utils/format'
 import { AppDispatch, RootState } from 'src/store'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchDataTable } from 'src/store/redlights'
+import { fetchDataCount, fetchDataTable } from 'src/store/redlights'
 import { DateType } from 'src/types/DatepickerTypes'
 import { format } from 'date-fns'
 
@@ -54,7 +54,7 @@ const columns: GridColDef[] = [
         valueGetter: params => new Date(params.value),
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {formatDate(params.row.violationDate)}
+                {formatDate(params.row.violation_date)}
             </Typography>
         )
     },
@@ -65,7 +65,7 @@ const columns: GridColDef[] = [
         headerName: 'Violations Count',
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {params.row.violationCount}
+                {params.row.violations}
             </Typography>
         )
     }
@@ -101,6 +101,13 @@ const RedlightTable = ({ startDate, endDate, intersection }: filterProps) => {
                 endDate: formattedEndDate
             })
         )
+        dispatch(
+            fetchDataCount({
+                intersection: intersection,
+                startDate: formattedStartDate,
+                endDate: formattedEndDate
+            })
+        )
         setLoading(false);
     }, [dispatch, startDate, endDate, intersection, paginationModel])
 
@@ -110,7 +117,7 @@ const RedlightTable = ({ startDate, endDate, intersection }: filterProps) => {
             <DataGrid
                 pagination
                 rows={store.data}
-                getRowId={(row) => row.id}
+                getRowId={(row) => `${row.camera_id}_${row.violation_date}_${row.violations}`}
                 rowCount={store.total}
                 columns={columns}
                 paginationMode='server'

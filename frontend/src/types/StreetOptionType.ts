@@ -1,5 +1,5 @@
 
 export type StreetOptionType = {
-    id: string
-    streetName: string
+    total: number
+    street_name: string
 }

@@ -10,7 +10,7 @@ import { Box } from '@mui/material'
 import { formatDate } from 'src/layouts/utils/format'
 import { AppDispatch, RootState } from 'src/store'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchDataTable } from 'src/store/crashes'
+import { fetchDataCount, fetchDataTable } from 'src/store/crashes'
 import { DateType } from 'src/types/DatepickerTypes'
 import { format } from 'date-fns'
 
@@ -25,7 +25,7 @@ const columns: GridColDef[] = [
 
             return (
                 <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                    {row.streetName}
+                    {row.street_name}
                 </Typography>
             )
         }
@@ -39,40 +39,40 @@ const columns: GridColDef[] = [
         valueGetter: params => new Date(params.value),
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {formatDate(params.row.crashDate)}
+                {formatDate(params.row.crash_date)}
             </Typography>
         )
     },
     {
         flex: 0.2,
         minWidth: 200,
-        field: 'primaryCause',
+        field: 'crash_type',
         headerName: 'Crash Type',
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {params.row.primaryCause}
+                {params.row.crash_type}
             </Typography>
         )
     },
     {
         flex: 0.125,
-        field: 'weatherCondition',
+        field: 'weather_condition',
         minWidth: 80,
         headerName: 'Weather Condition',
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {params.row.weatherCondition}
+                {params.row.weather_condition}
             </Typography>
         )
     },
     {
         flex: 0.2,
-        field: 'lightingCondition',
+        field: 'lighting_condition',
         minWidth: 300,
         headerName: 'Lighting Condition',
         renderCell: (params: GridRenderCellParams) => (
             <Typography variant='body2' sx={{ color: 'text.primary' }}>
-                {params.row.lightingCondition}
+                {params.row.lighting_condition}
             </Typography>
         )
     }
@@ -108,6 +108,13 @@ const CrashTable = ({ startDate, endDate, streetName }: filterProps) => {
                 endDate: formattedEndDate
             })
         )
+        dispatch(
+            fetchDataCount({
+                streetName: streetName,
+                startDate: formattedStartDate,
+                endDate: formattedEndDate
+            })
+        )
         setLoading(false);
     }, [dispatch, startDate, endDate, streetName, paginationModel])
 
@@ -116,7 +123,7 @@ const CrashTable = ({ startDate, endDate, streetName }: filterProps) => {
             <DataGrid
                 pagination
                 rows={store.data}
-                getRowId={(row) => row.id}
+                getRowId={(row) => row.crash_record_id}
                 rowCount={store.total}
                 columns={columns}
                 paginationMode='server'

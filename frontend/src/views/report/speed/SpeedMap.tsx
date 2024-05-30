@@ -65,7 +65,7 @@ const SpeedMap = ({ startDate, endDate }: filterProps) => {
             initializedMap.on('click', 'unclustered-point', (e) => {
                 if (!e.features || e.features[0].geometry.type != 'Point') return
                 const coordinates = e.features[0].geometry.coordinates.slice();
-                const count = e.features[0].properties?.count | 0;
+                const count = e.features[0].properties?.total | 0;
 
                 // Ensure that if the map is zoomed out such that
                 // multiple copies of the feature are visible, the
@@ -77,7 +77,7 @@ const SpeedMap = ({ startDate, endDate }: filterProps) => {
                 new mapboxgl.Popup()
                     .setLngLat({ lng: coordinates[0], lat: coordinates[1] })
                     .setHTML(
-                        `Crash Count: ${count}`
+                        `Violations Count: ${count}`
                     )
                     .addTo(initializedMap);
             });
@@ -97,7 +97,7 @@ const SpeedMap = ({ startDate, endDate }: filterProps) => {
                 clusterMaxZoom: 14,
                 clusterRadius: 50,
                 clusterProperties: {
-                    sum: ["+", ["to-number", ["get", "count", ["properties"]]]],
+                    sum: ["+", ["to-number", ["get", "total", ["properties"]]]],
                 },
             });
 
@@ -210,12 +210,7 @@ const SpeedMap = ({ startDate, endDate }: filterProps) => {
                 startDate: formattedStartDate,
                 endDate: formattedEndDate,
                 gridSize: cellSize,
-                boundingBox: JSON.stringify([
-                    [mapBounds[0][0], mapBounds[0][1]],
-                    [mapBounds[0][0], mapBounds[1][1]],
-                    [mapBounds[1][0], mapBounds[1][1]],
-                    [mapBounds[1][0], mapBounds[0][1]]
-                ])
+                boundingBox: `'POLYGON((${mapBounds[0][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[1][1]},${mapBounds[1][0]} ${mapBounds[0][1]},${mapBounds[0][0]} ${mapBounds[0][1]}))'`
             })
         ).then((response) => {
             if (response.payload && map.getSource('clusters')) {
@@ -226,7 +221,7 @@ const SpeedMap = ({ startDate, endDate }: filterProps) => {
         }).catch(error => {
             console.error('Error fetching Map:', error);
         });
-    }, [dispatch, startDate, endDate, mapZoom, mapBounds])
+    }, [dispatch, startDate, endDate, mapZoom, mapBounds, map])
 
     const handleChangeMapType = (event: ChangeEvent<HTMLInputElement>) => {
         const type = (event.target as HTMLInputElement).value;
